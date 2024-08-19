@@ -36,7 +36,6 @@ def agregar_texto_vertical(c, x, y, texto, size, color, vertical=False):
         # Dibujar el texto en la posición horizontal
         c.drawString(x, y, texto)
 
-
 def agregar_texto(x,y,texto,size,color,):
     c.setFont("ArialMTExtraBold", size)  # Cambia la fuente y el tamaño según sea necesario
     c.setFillColor(color)  # Cambia el color si es necesario
