@@ -46,7 +46,7 @@ pdfmetrics.registerFont(TTFont('arialmt', 'arialmt.ttf'))
 pdfmetrics.registerFont(TTFont('ArialMTExtraBold', 'ARIALMTEXTRABOLD.ttf'))
 
 # Cargar la lista de nombres desde un archivo de Excel
-df = pd.read_excel('nombre2.xlsx')  # Asegúrate de que el archivo .xlsx tenga una columna 'Nombre'
+df = pd.read_excel('nombre3.xlsx')  # Asegúrate de que el archivo .xlsx tenga una columna 'Nombre'
 print(df.columns)
 
 # Definir la posición del nombre en el PDF (ajustar según tu diseño)
@@ -54,7 +54,7 @@ nombre_posicion = (98, 630)  # (x, y) desde la esquina inferior izquierda
 qr_posicion = (114, 81)  # (x, y) desde la esquina inferior izquierda, ajustar según sea necesario
 
 # Cargar la plantilla del certificado
-template_path = 'plantilla2.pdf'
+template_path = 'Plantilla-bpl-julio.pdf'
 
 for index, row in tqdm(df.iterrows()):
     # Obtener el nombre desde la fila actual
@@ -90,7 +90,7 @@ for index, row in tqdm(df.iterrows()):
     c.drawImage(temp_qr_path, qr_posicion[0], qr_posicion[1], width=1.7*inch, height=1.7*inch)
 
     # Ejemplo de uso dentro del bucle
-    agregar_texto_vertical(c, 90, 123, codigo, 8, "#333333", vertical=True)
+    agregar_texto_vertical(c, 104.2, 123, codigo, 8, "#333333", vertical=True)
 
 
     # Finalizar el PDF temporal
