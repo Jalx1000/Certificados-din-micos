@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pandas
+reportlab
+PyPDF2
+qrcode
+openpyxl
