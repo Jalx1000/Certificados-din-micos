@@ -41,9 +41,49 @@ def agregar_texto_vertical(c, x, y, texto, size, color, vertical=False):
         c.drawString(x, y, texto)
 
 
-@app.get("/", response_class=HTMLResponse)
-def read_root():
-    return FileResponse("static/upload.html")
+def generate_pdf(row, template_path):
+    nombre = row['Nombre']
+    nombre_camelcase = camel_case(nombre)
+    nombre_url = text_url(nombre)
+    codigo = row['Codigo']
+    codigo_url = text_url(codigo)
+    url = f'https://wibel.net/{nombre_url}-{codigo_url}'
+
+    qr = qrcode.QRCode(version=1, box_size=6, border=0.5)
+    qr.add_data(url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill='black', back_color='white')
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_qr_file:
+        qr_img.save(temp_qr_file, format='PNG')
+        temp_qr_path = temp_qr_file.name
+
+    temp_pdf = f'temp/{nombre}_temp.pdf'
+    os.makedirs('temp', exist_ok=True)
+    c = canvas.Canvas(temp_pdf, pagesize=(1500, 2000))
+    c.setFont("ArialMTExtraBold", 38)
+    c.setFillColor("#303030")
+    c.drawString(98, 630, nombre_camelcase)
+    c.drawImage(temp_qr_path, 114, 81, width=1.7*inch, height=1.7*inch)
+    agregar_texto_vertical(c, 104.2, 123, codigo, 8, "#333333", vertical=True)
+    c.save()
+
+    os.remove(temp_qr_path)
+
+    template_pdf = PdfReader(template_path)
+    name_pdf = PdfReader(temp_pdf)
+    output = PdfWriter()
+
+    template_page = template_pdf.pages[0]
+    template_page.merge_page(name_pdf.pages[0])
+    output.add_page(template_page)
+
+    output_path = os.path.join('certificados', f'{nombre_url}-{codigo_url}.pdf')
+    with open(output_path, 'wb') as outputStream:
+        output.write(outputStream)
+
+    os.remove(temp_pdf)
+    return output_path
 
 
 @app.post("/upload/")
@@ -63,53 +103,11 @@ async def upload_file(file: UploadFile = File(...)):
     os.makedirs('certificados', exist_ok=True)
 
     for index, row in df.iterrows():
-        nombre = row['Nombre']
-        nombre_camelcase = camel_case(nombre)
-        nombre_url = text_url(nombre)
-        codigo = row['Codigo']
-        codigo_url = text_url(codigo)
-        url = f'https://wibel.net/{nombre_url}-{codigo_url}'
+        output_path = generate_pdf(row, template_path)
 
-        qr = qrcode.QRCode(version=1, box_size=6, border=0.5)
-        qr.add_data(url)
-        qr.make(fit=True)
-        qr_img = qr.make_image(fill='black', back_color='white')
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_qr_file:
-            qr_img.save(temp_qr_file, format='PNG')
-            temp_qr_path = temp_qr_file.name
-
-        temp_pdf = f'temp/{nombre}_temp.pdf'
-        os.makedirs('temp', exist_ok=True)
-        c = canvas.Canvas(temp_pdf, pagesize=(1500, 2000))
-        c.setFont("ArialMTExtraBold", 38)
-        c.setFillColor("#303030")
-        c.drawString(98, 630, nombre_camelcase)
-        c.drawImage(temp_qr_path, 114, 81, width=1.7*inch, height=1.7*inch)
-        agregar_texto_vertical(c, 104.2, 123, codigo, 8,
-                               "#333333", vertical=True)
-        c.save()
-
-        os.remove(temp_qr_path)
-
-        template_pdf = PdfReader(template_path)
-        name_pdf = PdfReader(temp_pdf)
-        output = PdfWriter()
-
-        for page in range(len(template_pdf.pages)):
-            template_page = template_pdf.pages[page]
-            if page == 0:
-                template_page.merge_page(name_pdf.pages[0])
-            output.add_page(template_page)
-
-        output_path = os.path.join(
-            'certificados', f'{nombre_url}-{codigo_url}.pdf')
-        with open(output_path, 'wb') as outputStream:
-            output.write(outputStream)
-
-        os.remove(temp_pdf)
-
-    return {"message": "Certificates generated successfully"}
+    # Devolver el último archivo generado (por ejemplo, se podría hacer para todos si es necesario)
+    print(output_path)
+    return FileResponse(output_path, media_type='application/pdf', filename=os.path.basename(output_path))
 
 
 @app.get("/certificates/{filename}")
